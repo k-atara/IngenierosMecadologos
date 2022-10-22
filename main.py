@@ -1,3 +1,4 @@
+from curses.ascii import isdigit
 from sklearn import tree
 import pandas as pd
 import unidecode
@@ -16,7 +17,20 @@ def makeDict(input_list):
         index = index + 1
     return temp_dict
 
-
+column_piso = [
+"nan",
+"DECIMO PRIMER PISO",
+"SEGUNDO PISO",
+"PISO 16 Y ESTACIONAMIENTO 74",
+"9-10-11",
+"1 y 2",
+"Segundo y Tercer piso",
+"piso 1",
+"6to piso",
+"1er piso",
+"estacionamiento 22",
+"2do piso"
+]
 column_departamento = [
 "nan",
 "Piura",
@@ -260,7 +274,7 @@ column_distrito = [
 "Yura",
 "San Vicente de Cañete",
 "Huancavelica",
-"Rupa -Rupa",
+"Rupa-Rupa",
 "Cieneguilla",
 "Yanahuara",
 "Lurigancho",
@@ -686,8 +700,13 @@ column_categoria = [
 "Muebles y enseres",
 "Maquinaria y/o Equipo"
 ]
+column_posicion = [
+    "nan",
+    "Exterior",
+    "Interior"
+]
 
-column_condicion = [
+column_conservacion = [
 "nan",
 "En construcción",
 "Bueno",
@@ -705,11 +724,13 @@ column_metodo_representado = [
 "Comparación de mercado (directo)",
 "Renta o capitalización (indirecto)"
 ]
+column_piso = makeDict(column_piso)
 column_departamento = makeDict(column_departamento)
 column_provincia = makeDict(column_provincia)
 column_distrito = makeDict(column_distrito)
 column_categoria = makeDict(column_categoria)
-column_condicion = makeDict(column_condicion)
+column_posicion = makeDict(column_posicion)
+column_conservacion = makeDict(column_conservacion)
 column_metodo_representado = makeDict(column_metodo_representado)
 
 
@@ -718,7 +739,9 @@ column_metodo_representado = makeDict(column_metodo_representado)
 def formatInput(input_list):
     for index, value in enumerate(input_list):
         value = unidecode.unidecode(str(value)).lower()
-        if value in column_departamento:
+        if value in column_piso:
+            input_list[index] = column_piso[value]
+        elif value in column_departamento:
             input_list[index] = column_departamento[value]
         elif value in column_provincia:
             input_list[index] = column_provincia[value]
@@ -726,10 +749,22 @@ def formatInput(input_list):
             input_list[index] = column_distrito[value]
         elif value in column_categoria:
             input_list[index] = column_categoria[value]
-        elif value in column_condicion:
-            input_list[index] = column_condicion[value]
+        elif value in column_posicion:
+            input_list[index] = column_posicion[value]
+        elif value in column_conservacion:
+            input_list[index] = column_conservacion[value]
         elif value in column_metodo_representado:
             input_list[index] = column_metodo_representado[value]
+        else:
+            if isinstance(value, str):
+                if value.isdigit():
+                    input_list[index] = int(value)
+                else:
+                    input_list[index] = float(value.replace(",", ""))
+            else:
+                input_list[index] = value
+
+ 
     return input_list
 
 
@@ -738,8 +773,7 @@ data_values = []
 data_classes = []
 for i in range(0, df.shape[0]): #desde la fila 0 hasta el tamaño de fila
     row = df.loc[i].values.tolist()
-    row = formatInput(row)
-    data_values.append(row[1:-1])
+    data_values.append(formatInput(row[1:-1]))
     data_classes.append(row[-1])
 
 
