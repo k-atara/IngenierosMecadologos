@@ -1,7 +1,7 @@
 from curses.ascii import isdigit
 from sklearn import tree
 import pandas as pd
-import unidecode
+from unidecode import unidecode
 df = pd.read_excel('./dataset.xlsx')
 
 
@@ -11,9 +11,9 @@ def makeDict(input_list):
     index = 0
     for value in input_list:
         if index == 0:
-            temp_dict[unidecode.unidecode(value).lower()] = -1
+            temp_dict[unidecode(value).lower()] = -1
         else:
-            temp_dict[unidecode.unidecode(value).lower()] = index
+            temp_dict[unidecode(value).lower()] = index
         index = index + 1
     return temp_dict
 
@@ -738,7 +738,7 @@ column_metodo_representado = makeDict(column_metodo_representado)
 # print(column_departamento)
 def formatInput(input_list):
     for index, value in enumerate(input_list):
-        value = unidecode.unidecode(str(value)).lower()
+        value = unidecode(str(value)).lower()
         if value in column_piso:
             input_list[index] = column_piso[value]
         elif value in column_departamento:
