@@ -668,6 +668,7 @@ column_distrito = [
 "Contamana"
 ]
 column_categoria = [
+"nan",
 "Vivienda Unifamiliar",
 "Departamento",
 "Oficina",
@@ -713,8 +714,6 @@ column_metodo_representado = makeDict(column_metodo_representado)
 
 
 
-
-
 # print(column_departamento)
 def formatInput(input_list):
     for index, value in enumerate(input_list):
@@ -726,7 +725,7 @@ def formatInput(input_list):
         elif value in column_distrito:
             input_list[index] = column_distrito[value]
         elif value in column_categoria:
-            row[index] = column_categoria[value]
+            input_list[index] = column_categoria[value]
         elif value in column_condicion:
             input_list[index] = column_condicion[value]
         elif value in column_metodo_representado:
@@ -738,20 +737,20 @@ def formatInput(input_list):
 data_values = []
 data_classes = []
 for i in range(0, df.shape[0]): #desde la fila 0 hasta el tamaño de fila
-    row = df.loc[0].values.tolist()
+    row = df.loc[i].values.tolist()
     row = formatInput(row)
     data_values.append(row[1:-1])
     data_classes.append(row[-1])
 
 
-# clf = tree.DecisionTreeClassifier()
-# clf = clf.fit(data_values, data_classes)
+clf = tree.DecisionTreeClassifier()
+clf = clf.fit(data_values, data_classes)
 
 # print("===============================================================")
 
 
 
-input_data = [1.0, "nan", 'Piura', 'Piura', 'Veintiseis de Octubre', "nan", "nan", -5.163182, -80.682388, 'Vivienda Unifamiliar', "nan", "nan", 0.0, "nan", 'En construcción', 'Costos o reposición (directo)', '62.50', '27.58']
+input_data = [1.0, "nan", 'Piura', 'Piura', 'Veintiseis de Octubre', "nan", "nan", -5.163182, -80.682388, 'Vivienda Unifamiliar', "nan", "nan", 0.0, "nan", 'En construcción', 'Costos o reposición (directo)', 62.50, 27.58]
 input_data = formatInput(input_data)
 print(input_data)
 
@@ -759,9 +758,9 @@ print(input_data)
 
 
 
-# result = clf.predict([input_data])
+result = clf.predict([input_data])
 
-# print(result)
+print(result)
 
 
 
