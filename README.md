@@ -3,6 +3,9 @@
 # Execute the File 'main.py' (you could specify the input data to process) 
         # python main.py <file_name>.csv
 
+# You have access to the trained model to use as you wish for this same aplication (inside the folder named 'model')
+
+
 # The team:
     # Aarón Pérez Ontiveros
     # Emmanuel del Rio Sarmiento

@@ -5,7 +5,9 @@ import math
 import sys
 import time
 to_drop = ["Fecha entrega del Informe", "Piso", "Posición", "Número de estacionamiento", "Número de frentes", "Elevador"]
-df1 = pd.read_csv('./dataset_formatted.csv')
+df1 = pd.DataFrame(pd.read_excel('./dataset_formatted.xlsx'))
+frames = [df1, df1.copy(), df1.copy(), df1.copy() ]
+df1 = pd.concat(frames)
 df2 = pd.DataFrame(pd.read_excel('./dataset.xlsx')).drop(to_drop, axis='columns')
 df3 = df1.drop( to_drop , axis='columns')
 nan_value = 0
@@ -129,7 +131,6 @@ else:
             input_df[header] = values_formatted
 
 
-print(input_df)
 
 
 for header in (df3.columns.values.tolist()):
@@ -137,6 +138,7 @@ for header in (df3.columns.values.tolist()):
   if check_nan:
     df3[header] = df3[header].fillna(nan_value)
     
+print(input_df)
 
 
 X = df3.drop('Valor comercial (USD)',axis='columns')
@@ -153,6 +155,12 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 est = HistGradientBoostingRegressor()
 est.fit(X_train, y_train)
 score = est.score(X_test, y_test)
+
+
+#save the model
+import pickle
+filename = './model/IngenierosMercadologosML.sav'
+pickle.dump(est, open(filename, 'wb'))
 
 
 predict = [round(item) for item in est.predict(input_df).tolist()] 
