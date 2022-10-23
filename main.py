@@ -1,803 +1,169 @@
-from curses.ascii import isdigit
-from sklearn import tree
 import pandas as pd
+import numpy as np
 from unidecode import unidecode
-df = pd.read_excel('./dataset.xlsx')
-
-
+import math
+import sys
+import time
+to_drop = ["Fecha entrega del Informe", "Piso", "Posición", "Número de estacionamiento", "Número de frentes", "Elevador"]
+df1 = pd.read_csv('./dataset_formatted.csv')
+df2 = pd.DataFrame(pd.read_excel('./dataset.xlsx')).drop(to_drop, axis='columns')
+df3 = df1.drop( to_drop , axis='columns')
+nan_value = 0
 
 def makeDict(input_list):
-    temp_dict = dict({"nan": -1})
-    index = 0
+    temp_dict = dict({"nan": nan_value})
+    index = 1
     for value in input_list:
-        if index == 0:
-            temp_dict[unidecode(value).lower()] = -1
+        if type(value) is int or type(value) is float:
+            if(math.isnan(value)):
+                temp_dict["nan"] = nan_value
+            else:
+                return input_list
+        elif value == "nan" or value == "NaN":
+            temp_dict[unidecode(value).lower()] = nan_value
         else:
             temp_dict[unidecode(value).lower()] = index
-        index = index + 1
+            index = index + 1
+        
     return temp_dict
 
-column_piso = [
-"nan",
-"DECIMO PRIMER PISO",
-"SEGUNDO PISO",
-"PISO 16 Y ESTACIONAMIENTO 74",
-"9-10-11",
-"1 y 2",
-"Segundo y Tercer piso",
-"piso 1",
-"6to piso",
-"1er piso",
-"estacionamiento 22",
-"2do piso"
-]
-column_departamento = [
-"nan",
-"Piura",
-"Lima",
-"Junín",
-"Áncash",
-"Ucayali",
-"Arequipa",
-"San Martín",
-"Callao",
-"Tumbes",
-"Loreto",
-"Huancavelica",
-"La Libertad",
-"Puno",
-"Lambayeque",
-"Pasco",
-"Tacna",
-"Huánuco",
-"Cusco",
-"Cajamarca",
-"Apurímac",
-"Moquegua",
-"Amazonas",
-"Ayacucho",
-"Madre de Dios"
-]
-
-column_provincia = [
-"nan",
-"Piura",
-"Lima",
-"Satipo",
-"Huaraz",
-"Coronel Portillo",
-"Arequipa",
-"Moyobamba",
-"Prov. Const. del Callao",
-"Zarumilla",
-"Maynas",
-"San Martín",
-"CHINCHA",
-"Trujillo",
-"Alto Amazonas",
-"Bellavista",
-"San Román",
-"Santa",
-"Concepción",
-"Chiclayo",
-"Barranca",
-"Chanchamayo",
-"Oxapampa",
-"Morropón",
-"Huancayo",
-"Rioja",
-"Tacna",
-"Cañete",
-"Huancavelica",
-"Leoncio Prado",
-"Cusco",
-"Huaura",
-"Picota",
-"Huallaga",
-"Huánuco",
-"Cajamarca",
-"Ambo",
-"Islay",
-"Mariscal Cáceres",
-"PISCO",
-"El Dorado",
-"Abancay",
-"Sullana",
-"Chucuito",
-"Lambayeque",
-"Mariscal Nieto",
-"Ilo",
-"Pacasmayo",
-"Huaral",
-"Celendín",
-"Pasco",
-"San Ignacio",
-"Camaná",
-"Tumbes",
-"Utcubamba",
-"Huamanga",
-"Atalaya",
-"Chepén",
-"Junín",
-"Contralmirante Villar",
-"Pachitea",
-"Andahuaylas",
-"Jaén",
-"Virú",
-"Puno",
-"Paita",
-"Anta",
-"Canta",
-"Tambopata",
-"Chupaca",
-"Talara",
-"Huarmey",
-"Canchis",
-"PALPA",
-"El Collao",
-"Huarochirí",
-"Huaylas",
-"Puerto Inca",
-"Ferreñafe",
-"Tarma",
-"Casma",
-"Ascope",
-"Cutervo",
-"Sechura",
-"Yauli",
-"Padre Abad",
-"Huamalíes",
-"San Marcos",
-"Requena",
-"NAZCA",
-"Espinar",
-"Carhuaz",
-"Urubamba",
-"Calca",
-"Caylloma",
-"CALLAO",
-"Acomayo",
-"Huanta",
-"Lamas",
-"Chota",
-"Loreto",
-"La Convención",
-"Oyón",
-"Hualgayoc",
-"Yungay",
-"Sánchez Carrión",
-"Tayacaja",
-"Bagua",
-"Castilla",
-"Tocache",
-"Caravelí",
-"La Mar",
-"Cotabambas",
-"Corongo",
-"Huari",
-"Cajabamba",
-"Azángaro",
-"Daniel Alcides Carrión",
-"Otuzco",
-"Datem del Marañón",
-"Bolognesi",
-"Recuay",
-"Ocros",
-"Gran Chimú",
-"Chachapoyas",
-"Tarata",
-"Lauricocha",
-"Jauja",
-"Lampa",
-"Pallasca",
-"Mariscal Ramón Castilla",
-"Quispicanchi",
-"Jorge Basadre",
-"Sucre",
-"Tahuamanu",
-"Melgar",
-"Sihuas",
-"Paucartambo",
-"Rodríguez de Mendoza",
-"Bongará",
-"Ucayali"
-]
-
-column_distrito = [
-"nan",
-"Veintiseis de Octubre",
-"Surquillo",
-"Satipo",
-"Santiago de Surco",
-"Lima",
-"San Borja",
-"San Juan de Miraflores",
-"Huaraz",
-"Barranco",
-"La Victoria",
-"Ate",
-"Calleria",
-"Miraflores",
-"José Luis Bustamante Y Rivero",
-"Moyobamba",
-"Cayma",
-"Bellavista",
-"Zarumilla",
-"Chorrillos",
-"Callao",
-"Iquitos",
-"Magdalena del Mar",
-"San Juan de Lurigancho",
-"Comas",
-"Morales",
-"CHINCHA",
-"La Esperanza",
-"La Molina",
-"Yurimaguas",
-"Jesús María",
-"San Rafael",
-"San Isidro",
-"Juliaca",
-"San Miguel",
-"Trujillo",
-"Chimbote",
-"Yarinacocha",
-"Punta Negra",
-"Pueblo Libre",
-"Carabayllo",
-"Matahuasi",
-"Puente Piedra",
-"José Leonardo Ortiz",
-"Breña",
-"Supe",
-"Pichanaqui",
-"Santa Anita",
-"Tambo Grande",
-"Piura",
-"Nuevo Chimbote",
-"Villa Rica",
-"Chulucanas",
-"Tarapoto",
-"Los Olivos",
-"San Luis",
-"Lince",
-"Castilla",
-"Villa María del Triunfo",
-"Huancayo",
-"Posic",
-"Chiclayo",
-"Rímac",
-"Chanchamayo",
-"Tacna",
-"Lurin",
-"La Banda de Shilcayo",
-"Yura",
-"San Vicente de Cañete",
-"Huancavelica",
-"Rupa-Rupa",
-"Cieneguilla",
-"Yanahuara",
-"Lurigancho",
-"San Antonio",
-"San Martín de Porres",
-"Arequipa",
-"Cusco",
-"Santa María del Mar",
-"Santa Rosa",
-"Huacho",
-"ICA",
-"Picota",
-"Saposoa",
-"Amarilis",
-"Florencia de Mora",
-"Huanuco",
-"La Perla",
-"El Tambo",
-"Sachaca",
-"Cajamarca",
-"Villa El Salvador",
-"Tomay Kichwa",
-"Cerro Colorado",
-"Campoverde",
-"Cocachacra",
-"Juanjuí",
-"Chaclacayo",
-"PISCO",
-"Calzada",
-"Victor Larco Herrera",
-"San Jerónimo",
-"San José de Sisa",
-"Pilcomayo",
-"Abancay",
-"Sullana",
-"Punchana",
-"Desaguadero",
-"Lambayeque",
-"Pachacamac",
-"Pucusana",
-"Motupe",
-"Saña",
-"Moquegua",
-"Ilo",
-"Wanchaq",
-"San José",
-"Huanchaco",
-"Ventanilla",
-"Mala",
-"Chancay",
-"Nueva Cajamarca",
-"Rioja",
-"Salitral",
-"Vegueta",
-"Huaral",
-"Celendín",
-"Bajo Biavo",
-"Punta Hermosa",
-"Manantay",
-"Yanacancha",
-"Tucume",
-"San José de Lourdes",
-"Asia",
-"Samuel Pastor",
-"El Agustino",
-"Catacaos",
-"Aguas Verdes",
-"Tumbes",
-"San Bartolo",
-"Chilca",
-"Bagua Grande",
-"Ayacucho",
-"Raymondi",
-"Jayanca",
-"Santa María",
-"San Sebastian",
-"Chepen",
-"Junin",
-"Chaupimarca",
-"Imperial",
-"Cerro Azul",
-"Paucarpata",
-"Zorritos",
-"San Hilarión",
-"Independencia",
-"San Juan Bautista",
-"Paramonga",
-"Panao",
-"Andahuaylas",
-"Jaén",
-"Huaura",
-"Carmen Alto",
-"Moche",
-"Los Baños del Inca",
-"Barranca",
-"Characato",
-"Marcavelica",
-"Viru",
-"Puno",
-"Miguel Checa",
-"Paita",
-"Supe Puerto",
-"Cachimayo",
-"Simbal",
-"San Ramón",
-"Nuevo Imperial",
-"Canta",
-"Elías Soplin Vargas",
-"Tambopata",
-"Laredo",
-"Pimentel",
-"Samegua",
-"Pangoa",
-"Mazamari",
-"Chupaca",
-"El Alto",
-"Coronel Gregorio Albarracín Lanchipa",
-"Belén",
-"La Huaca",
-"Huarmey",
-"Socabaya",
-"Sicuani",
-"PALPA",
-"Pariñas",
-"Ilave",
-"Pacanga",
-"San Jerónimo de Tunan",
-"Santa María del Valle",
-"Hualmay",
-"La Punta",
-"Caraz",
-"Concepción",
-"Santiago",
-"Puerto Inca",
-"Pacasmayo",
-"Chipurana",
-"Ferreñafe",
-"Santa Eulalia",
-"Tarma",
-"Camaná",
-"Jacobo Hunter",
-"Casma",
-"Alto Selva Alegre",
-"Ascope",
-"El Porvenir",
-"Cutervo",
-"Antioquia",
-"Alto de la Alianza",
-"Huarochiri",
-"San Pedro de Lloc",
-"Sechura",
-"Santa Cruz de Flores",
-"Ancón",
-"Yauli",
-"Río Negro",
-"Padre Abad",
-"Llata",
-"Oxapampa",
-"Mariano Melgar",
-"Perene",
-"Chao",
-"Pedro Gálvez",
-"La Joya",
-"Jangas",
-"Pillco Marca",
-"La Matanza",
-"Reque",
-"Guadalupe",
-"Anta",
-"Mejia",
-"Requena",
-"NAZCA",
-"Ricardo Palma",
-"Sapallanga",
-"Espinar",
-"Comandante Noel",
-"Salaverry",
-"Sayan",
-"Tamburco",
-"Yungar",
-"Pocollay",
-"Pucara",
-"Irazola",
-"Urubamba",
-"Calca",
-"Santiago de Cao",
-"Aucallama",
-"Olmos",
-"Mollebaya",
-"Chivay",
-"Morropon",
-"Cajaruro",
-"Pardo Miguel",
-"Alto Biavo",
-"Santa",
-"Mosoc Llacta",
-"Uchumayo",
-"Huanta",
-"Poroy",
-"Carmen de la Legua Reynoso",
-"Caynarachi",
-"Sabandia",
-"Chota",
-"Calango",
-"Buenos Aires",
-"Monsefu",
-"Trompeteros",
-"Coishco",
-"Quellouno",
-"Sacanche",
-"Tiabaya",
-"Oyon",
-"Las Lomas",
-"Chontabamba",
-"San Fernando",
-"La Oroya",
-"Juan Guerra",
-"Cayalti",
-"Santa Ana",
-"Bambamarca",
-"Yungay",
-"Nueva Requena",
-"Mollendo",
-"Soritor",
-"Luyando",
-"Paijan",
-"Huancan",
-"Quilmana",
-"Echarate",
-"Coayllo",
-"Huamachuco",
-"San Pablo",
-"Pacocha",
-"Tres de Diciembre",
-"Ollantaytambo",
-"Yantalo",
-"Yuracyacu",
-"Chicama",
-"Pampas",
-"Carhuaz",
-"Bagua",
-"Sama",
-"Uraca",
-"Majes",
-"Barranquita",
-"Nuevo Progreso",
-"José Crespo y Castillo",
-"Juli",
-"Machupicchu",
-"Campanilla",
-"Rázuri",
-"Chala",
-"Los Organos",
-"Morococha",
-"Awajun",
-"Puerto Bermúdez",
-"Chongoyape",
-"Lamas",
-"La Unión",
-"Pativilca",
-"Palcazu",
-"Oyotun",
-"Río Tambo",
-"Challhuahuacho",
-"San Martín",
-"Tambillo",
-"Calana",
-"La Cruz",
-"La Pampa",
-"Eten Puerto",
-"Chavin de Huantar",
-"Marcara",
-"Tocache",
-"Mochumi",
-"Acopampa",
-"Colan",
-"Caspisapa",
-"Pucacaca",
-"Huancabamba",
-"Huallaga",
-"Chocope",
-"Cacatachi",
-"Condebamba",
-"Matacoto",
-"Encañada",
-"Mariscal Cáceres",
-"Alto Nanay",
-"Azángaro",
-"Huamancaca Chico",
-"Pueblo Nuevo",
-"Sicaya",
-"Yanahuanca",
-"Morrope",
-"Vicco",
-"Canoas de Punta Sal",
-"Jequetepeque",
-"Mito",
-"Cajabamba",
-"Constitución",
-"Ocoña",
-"Honoria",
-"Otuzco",
-"Corrales",
-"Tinco",
-"Poroto",
-"Uchiza",
-"Vice",
-"Tingo de Ponasa",
-"Huallanca",
-"Ticapampa",
-"Cochas",
-"Cascas",
-"San Agustín",
-"Chachapoyas",
-"Jesús Nazareno",
-"Tarata",
-"Pucyura",
-"Churubamba",
-"ALTO AMAZONAS",
-"Recuay",
-"Palca",
-"Llacanora",
-"Mancos",
-"Huayllay",
-"Orcotuna",
-"Huariaca",
-"Corongo",
-"La Arena",
-"Lunahuana",
-"Maras",
-"Chinchero",
-"Llaylla",
-"Castillo Grande",
-"Talavera",
-"Caminaca",
-"Sivia",
-"San Miguel de Cauri",
-"Jauja",
-"Jesús",
-"Yuyapichis",
-"Pomalca",
-"Santa Cruz de Cocachacra",
-"Calapuja",
-"Acobamba",
-"Matucana",
-"Mancora",
-"Vitoc",
-"Tauca",
-"Nauta",
-"Islay",
-"Eten",
-"Pilluana",
-"Ramón Castilla",
-"Santa Rosa de Sacco",
-"Pisac",
-"Oropesa",
-"Locumba",
-"Habana",
-"Querobamba",
-"Ignacio Escudero",
-"Santa Rita de Siguas",
-"Taray",
-"Las Piedras",
-"Iñapari",
-"Andahuaylillas",
-"Polvora",
-"Acos",
-"Lamay",
-"Pacora",
-"Tambo",
-"Querecotillo",
-"Ciudad Nueva",
-"Huaylas",
-"Ahuac",
-"Curimana",
-"Nepeña",
-"Carhuamayo",
-"Ayaviri",
-"Illimo",
-"Ambo",
-"Ayna",
-"Indiana",
-"Cura Mori",
-"Pampa Hermosa",
-"San Ignacio",
-"Buena Vista Alta",
-"Chiguata",
-"Santo Domingo de Los Olleros",
-"Sihuas",
-"Caracoto",
-"Rumisapa",
-"Kosñipata",
-"Tarica",
-"Manuel Antonio Mesones Muro",
-"Guadalupito",
-"San Salvador",
-"Huata",
-"Pachia",
-"Hualhuas",
-"Orcopampa",
-"Curahuasi",
-"Culebras",
-"San Nicolás",
-"Jazan",
-"Contamana"
-]
-column_categoria = [
-"nan",
-"Vivienda Unifamiliar",
-"Departamento",
-"Oficina",
-"Local Comercial",
-"AVALUOS_TIPOS_INMUEBLE_VEHICULO",
-"Almacén /Taller",
-"Estacionamiento/depósito (U.I.)",
-"Industria",
-"Terreno Urbano",
-"Centro de Salud",
-"Hotel",
-"Intitución Educativa",
-"Fundo Agrícola",
-"Terreno Rústico (eriazo)",
-"Muebles y enseres",
-"Maquinaria y/o Equipo"
-]
-column_posicion = [
-    "nan",
-    "Exterior",
-    "Interior"
-]
-
-column_conservacion = [
-"nan",
-"En construcción",
-"Bueno",
-"Regular",
-"Muy bueno",
-"En proyecto",
-"Malo",
-"Bueno - Regular",
-"Regular - Malo"
-]
-
-column_metodo_representado = [
-"nan",
-"Costos o reposición (directo)",
-"Comparación de mercado (directo)",
-"Renta o capitalización (indirecto)"
-]
-column_piso = makeDict(column_piso)
-column_departamento = makeDict(column_departamento)
-column_provincia = makeDict(column_provincia)
-column_distrito = makeDict(column_distrito)
-column_categoria = makeDict(column_categoria)
-column_posicion = makeDict(column_posicion)
-column_conservacion = makeDict(column_conservacion)
-column_metodo_representado = makeDict(column_metodo_representado)
-
-
-
-# print(column_departamento)
-def formatInput(input_list):
+def formatValues(input_list, values_in_dict):
     for index, value in enumerate(input_list):
         value = unidecode(str(value)).lower()
-        if value in column_piso:
-            input_list[index] = column_piso[value]
-        elif value in column_departamento:
-            input_list[index] = column_departamento[value]
-        elif value in column_provincia:
-            input_list[index] = column_provincia[value]
-        elif value in column_distrito:
-            input_list[index] = column_distrito[value]
-        elif value in column_categoria:
-            input_list[index] = column_categoria[value]
-        elif value in column_posicion:
-            input_list[index] = column_posicion[value]
-        elif value in column_conservacion:
-            input_list[index] = column_conservacion[value]
-        elif value in column_metodo_representado:
-            input_list[index] = column_metodo_representado[value]
+        if value in values_in_dict:
+            input_list[index] = values_in_dict[value]
         else:
             if isinstance(value, str):
                 if value.isdigit():
                     input_list[index] = int(value)
                 else:
-                    input_list[index] = float(value.replace(",", ""))
+                    try:
+                        if time.strptime(value, "%Y-%m-%d %H:%M:%S"):
+                            input_list[index] = value
+                            continue
+                    except Exception as e:
+                        # print(e)
+                        pass
+                    input_list[index] = float(value)
+                      
+                    
             else:
                 input_list[index] = value
-
- 
     return input_list
 
+input = None
+input_df = pd.DataFrame() 
+original_df = pd.DataFrame() 
+if len(sys.argv) == 2:
+    print(f"File routine, trying to open: {sys.argv[1]}")
+    to_drop.append('ID')
+    to_drop.append('Valor comercial (USD)')
+    input = pd.DataFrame(pd.read_excel(sys.argv[1]))
+    print(input)
+    original_df = input
+    input = input.drop(to_drop,axis='columns')
+    for header in (input):
+        value = input.loc[:,header]
+        values_in_dict = makeDict(value)
+        # print(f"result dict -> {values_in_dict}")
+        values_formatted = formatValues(value, values_in_dict)
+        input_df[header] = values_formatted
+elif len(sys.argv) > 2:
+    print("Usage:")
+    print("python <name_file> <file_to_read>.csv")
+    exit()
+else: 
+    input = [{
+        "Fecha entrega del Informe": "",
+        "Tipo de vía": 0,
+        "Piso":"",
+        "Departamento": "lima",
+        "Provincia": "lima", 
+        "Distrito":"miraflores",
+        "Número de estacionamiento":3,
+        "Depósitos": 0, 
+        "Latitud (Decimal)":-12.1105034, 
+        "Longitud (Decimal)":-77.0455251, 
+        "Categoría del bien":"departamento", 
+        "Posición":"", 
+        "Número de frentes":"", 
+        "Edad":2, 
+        "Elevador":1, 
+        "Estado de conservación":"muy bueno",
+        "Método Representado":"comparacion de mercado (directo)", 
+        "Área Terreno":100, 
+        "Área Construcción":227,
+        "dormitorio":3
+    },
+    {
+        "Fecha entrega del Informe": "",
+        "Tipo de vía": 2,
+        "Piso":"",
+        "Departamento": "lima",
+        "Provincia": "lima", 
+        "Distrito":"miraflores",
+        "Número de estacionamiento":3,
+        "Depósitos": 0, 
+        "Latitud (Decimal)":-12.1105034, 
+        "Longitud (Decimal)":-77.0455251, 
+        "Categoría del bien":"departamento", 
+        "Posición":"", 
+        "Número de frentes":"", 
+        "Edad":2, 
+        "Elevador":1, 
+        "Estado de conservación":"muy bueno",
+        "Método Representado":"comparacion de mercado (directo)", 
+        "Área Terreno":100, 
+        "Área Construcción":227,
+        "dormitorio":3
+    }
+    ]
 
 
-data_values = []
-data_classes = []
-for i in range(0, df.shape[0]): #desde la fila 0 hasta el tamaño de fila
-    row = df.loc[i].values.tolist()
-    data_values.append(formatInput(row[1:-1]))
-    data_classes.append(row[-1])
+    for input_ind in input:
+        for header in (df2.columns.values.tolist())[:-1]:
+            value = [item[header] for item in input]
+            values_in_dict = makeDict(value)
+            # print(f"result dict -> {values_in_dict}")
+            values_formatted = formatValues(value, values_in_dict)
+            input_df[header] = values_formatted
 
 
-clf = tree.DecisionTreeClassifier()
-clf = clf.fit(data_values, data_classes)
-
-# print("===============================================================")
+print(input_df)
 
 
-
-input_data = [1.0, "nan", 'Piura', 'Piura', 'Veintiseis de Octubre', "nan", "nan", -5.163182, -80.682388, 'Vivienda Unifamiliar', "nan", "nan", 0.0, "nan", 'En construcción', 'Costos o reposición (directo)', 62.50, 27.58]
-input_data = formatInput(input_data)
-print(input_data)
-
-
-
+for header in (df3.columns.values.tolist()):
+  check_nan = df3[header].isnull().values.any()
+  if check_nan:
+    df3[header] = df3[header].fillna(nan_value)
+    
 
 
-result = clf.predict([input_data])
+X = df3.drop('Valor comercial (USD)',axis='columns')
+# print(X.head())
 
-print(result)
+y = df3.loc[:,'Valor comercial (USD)']
+# print(y.head())
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.02,random_state=10)
 
 
+from sklearn.ensemble import HistGradientBoostingRegressor
+est = HistGradientBoostingRegressor()
+est.fit(X_train, y_train)
+score = est.score(X_test, y_test)
 
 
-
-
+predict = [round(item) for item in est.predict(input_df).tolist()] 
+real_data = y_test.tolist()
+print(f"predict   {(predict)}")
+# print(f"real_data {(real_data)}")
+print(f"score from test_set: {score}")
+original_df["Valor comercial (USD)"] = predict
+pd.to_datetime(original_df.loc[:,"Fecha entrega del Informe"], format="%Y-%m-%d %H:%M:%S")
+from pathlib import Path  
+filepath = Path('./out.xlsx')  
+filepath.parent.mkdir(parents=True, exist_ok=True)  
+original_df.to_excel(filepath, index=False,encoding='utf-8-sig') 
+# print(original_df)
